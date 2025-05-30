@@ -10,6 +10,9 @@ mongoose
 
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+const skillRoutes = require("./routes/skillRoutes");
+const submissionRoutes = require("./routes/submission");
+const challangeRoutes = require("./routes/challangeRoutes");
 
 const app = express();
 
@@ -18,6 +21,9 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/skill", skillRoutes);
+app.use("/api/submissions", submissionRoutes);
+app.use("/api/challanges", challangeRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
