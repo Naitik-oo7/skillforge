@@ -8,10 +8,11 @@ app.use(express.json());
 //Post a submission
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { skill, code } = req.body;
+    const { skill, code, challenge } = req.body;
     const newSubmission = new Submission({
       user: req.user.id,
       skill,
+      challenge,
       code,
       result: "Pending",
     });
@@ -25,7 +26,7 @@ router.post("/", authMiddleware, async (req, res) => {
 //Get /api/submissions/:id - Getting a single submission by id
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    const submission = Submission.findById(req.params.id)
+    const submission = await Submission.findById(req.params.id)
       .populate("user", "name email")
       .populate("skill", "name");
     if (!submission) {
@@ -71,7 +72,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 // Simulate code evaluation
 router.post("/:id/evaluate", authMiddleware, async (req, res) => {
   try {
-    const submission = Submission.findById(req.params.id);
+    const submission = await Submission.findById(req.params.id);
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
     }
@@ -81,7 +82,7 @@ router.post("/:id/evaluate", authMiddleware, async (req, res) => {
     }
 
     const code = submission.code;
-    const isPassed = code.includes("console.log");
+    const isPassed = code.trim().includes("console.log");
 
     submission.result = isPassed ? "Passed" : "Failed";
     await submission.save();
@@ -94,7 +95,7 @@ router.post("/:id/evaluate", authMiddleware, async (req, res) => {
 //get all sub for specific skills
 router.get("/skill/:skillId", authMiddleware, async (req, res) => {
   try {
-    const submissions = Submission.find({ skill: req.params.skillId })
+    const submissions = await Submission.find({ skill: req.params.skillId })
       .populate("user", "name email")
       .sort({ submittedAt: -1 });
 
@@ -127,15 +128,17 @@ router.get("/user/:userId/stats", authMiddleware, async (req, res) => {
   }
 });
 
-//all submission for specific challange
-router.get("/challange/:challangeId", authMiddleware, async (req, res) => {
+//all submission for specific challenge
+router.get("/challenge/:challengeId", authMiddleware, async (req, res) => {
   try {
     const submissions = await Submission.find({
-      challange: req.params.challangeId,
+      challenge: req.params.challengeId,
     })
       .populate("user", "name email")
       .sort({ submittedAt: -1 });
-  } catch (error) {}
+    res.json(submissions);
+  } catch (error) {  res.status(500).json({ message: error.message });
+}
 });
 
 // Manual Evaluation by Admin

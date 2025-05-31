@@ -1,20 +1,18 @@
 const express = require("express");
 const authMiddleware = require("../middleware/auth");
-const Challange = require("../models/Challange");
-const { findByIdAndDelete } = require("../models/user");
-const { object } = require("zod");
+const Challenge = require("../models/Challenge");
 const app = express();
 const router = express.Router();
 
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const newChallange = new Challange({
+    const newChallenge = new Challenge({
       ...req.body,
       createdBy: req.user.id,
     });
 
-    await newChallange.save();
-    res.status(201).json(newChallange);
+    await newChallenge.save();
+    res.status(201).json(newChallenge);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -22,10 +20,10 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const challanges = await Challange.find()
+    const challenges = await Challenge.find()
       .populate("skill")
       .populate("createdBy", "name email");
-    res.json(challanges);
+    res.json(challenges);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -33,13 +31,13 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    const challange = await Challange.findById(req.params.id)
+    const challenge = await Challenge.findById(req.params.id)
       .populate("skill")
       .populate("createdBy", "name email");
-    if (!challange) {
-      return res.json({ messaeg: "Challange not found" });
+    if (!challenge) {
+      return res.json({ messaeg: "Challenge not found" });
     }
-    res.json(challange);
+    res.json(challenge);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -47,21 +45,12 @@ router.get("/:id", authMiddleware, async (req, res) => {
 
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
-    const updatedChallange = await Challange.findByIdAndUpdate(
+    const updatedChallenge = await Challenge.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
-    res.json(updatedChallange);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-router.delete("/:id", authMiddleware, async (req, res) => {
-  try {
-    await Challange.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Challange deleted" });
+    res.json(updatedChallenge);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -69,17 +58,17 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 
 router.patch("/:id", authMiddleware, async (req, res) => {
   try {
-    const challange = Challange.findById(req.params.id);
-    if (!challange) {
+    const challenge = Challenge.findById(req.params.id);
+    if (!challenge) {
       return res.status(404).json({ message: "Challenge not found" });
     }
 
-    if (challange.createdBy !== req.user.id) {
+    if (challenge.createdBy !== req.user.id) {
       res.status(403).json({ message: "Not authorized" });
     }
-    object.assign(challange, req.body);
-    const updatedChallange = await challange.save();
-    res.json(updatedChallange);
+    Object.assign(challenge, req.body);
+    const updatedChallenge = await challenge.save();
+    res.json(updatedChallenge);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -87,16 +76,16 @@ router.patch("/:id", authMiddleware, async (req, res) => {
 
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    const challange = Challange.findById(req.params.id);
-    if (!challange) {
-      return res.json({ message: "Challange not Found" });
+    const challenge = Challenge.findById(req.params.id);
+    if (!challenge) {
+      return res.json({ message: "Challenge not Found" });
     }
-    if (challange.createdBy.toString() !== req.user.id) {
+    if (challenge.createdBy.toString() !== req.user.id) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    await challange.deleteOne();
-    res.json({ message: "Challange Deleted" });
+    await challenge.deleteOne();
+    res.json({ message: "Challenge Deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

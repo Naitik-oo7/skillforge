@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const challangeSchema = new mongoose.Schema(
+const challengeSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -27,6 +27,6 @@ const challangeSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-const Challange = mongoose.model("Challange", challangeSchema);
+const Challenge = mongoose.model("Challenge", challengeSchema);
 
-module.exports = Challange;
+module.exports = Challenge;

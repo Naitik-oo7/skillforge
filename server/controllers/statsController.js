@@ -14,7 +14,7 @@ async function getUserStats(req, res) {
 
       {
         $group: {
-          _id: "$status",
+          _id: "$result",
           count: { $sum: 1 },
         },
       },
@@ -47,7 +47,7 @@ async function getUserStats(req, res) {
 async function getLeaderboard(req, res) {
   try {
     const leaderboard = await Submission.aggregate([
-      { $match: { status: "Passed" } },
+      { $match: { result: "Passed" } },
 
       {
         $group: {
@@ -75,7 +75,6 @@ async function getLeaderboard(req, res) {
         $project: {
           _id: 0,
           userId: "$_id",
-          username: "$userInfo.username",
           name: "$userInfo.name",
           passedCount: 1,
         },

@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, isAdmin } = req.body;
 
     //Checking User
     const existingUser = await User.findOne({ email });
@@ -21,7 +21,7 @@ router.post("/signup", async (req, res) => {
     const hashPass = await bcrypt.hash(password, 10);
 
     //New User Creation
-    const user = await User.create({ name, email, password: hashPass });
+    const user = await User.create({ name, email, password: hashPass, isAdmin});
 
     //token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -34,6 +34,7 @@ router.post("/signup", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        isAdmin : isAdmin || false
       },
     });
   } catch (error) {
@@ -57,7 +58,7 @@ router.post("/login", async (req, res) => {
     }
 
     //Pass check
-    const passMatch = bcrypt.compare(password, user.password);
+    const passMatch =await bcrypt.compare(password, user.password);
     if (!passMatch) {
       res.status(400).json({
         message: "Incorrect Password",
