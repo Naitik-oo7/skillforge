@@ -44,4 +44,49 @@ async function getUserStats(req, res) {
   }
 }
 
-module.exports = { getUserStats };
+async function getLeaderboard(req, res) {
+  try {
+    const leaderboard = await Submission.aggregate([
+      { $match: { status: "Passed" } },
+
+      {
+        $group: {
+          _id: "$user",
+          passedCount: { $sum: 1 },
+        },
+      },
+
+      { $sort: { passedCount: -1 } },
+
+      { $limit: 5 },
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id", 
+          foreignField: "_id", 
+          as: "userInfo",
+        },
+      },
+
+      { $unwind: "$userInfo" },
+
+      {
+        $project: {
+          _id: 0,
+          userId: "$_id",
+          username: "$userInfo.username",
+          name: "$userInfo.name",
+          passedCount: 1,
+        },
+      },
+    ]);
+
+    return res.json(leaderboard);
+  } catch (error) {
+    console.error("Error in getLeaderboard:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+module.exports = { getUserStats, getLeaderboard };
