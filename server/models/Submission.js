@@ -6,6 +6,10 @@ const submissionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
   },
   skill: {
     type: mongoose.Schema.Types.ObjectId,
@@ -23,6 +27,11 @@ const submissionSchema = new mongoose.Schema({
   submittedAt: {
     type: Date,
     default: Date.now,
+  },
+  challange: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Challange",
+    required: true,
   },
 });
 

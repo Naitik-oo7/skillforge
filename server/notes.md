@@ -4,4 +4,4 @@
 Why attach to req.user from the decoded token  in authentication ?
 Because req is the object passed down to every middleware and route handler in Express for that request’s lifecycle.
 - put vs patch -> put you need to send all the fields, patch -> can update the data you only need rather than whole 
-- populate() -> replaces the id with actual document
+- populate() -> replaces the id with actual document and you can specify which fields you want in the arguments

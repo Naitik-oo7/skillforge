@@ -5,7 +5,7 @@ const router = require("./auth");
 const app = express();
 
 app.use(express.json());
-
+//Post a submission
 router.post("/", authMiddleware, async (req, res) => {
   try {
     const { skill, code } = req.body;
@@ -50,7 +50,7 @@ router.get("/user/:userId", authMiddleware, async (req, res) => {
   }
 });
 
-//Deltee
+//Delete
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const submission = await Submission.findById(req.params.id);
@@ -91,8 +91,7 @@ router.post("/:id/evaluate", authMiddleware, async (req, res) => {
   }
 });
 
-//get all sub for speccific sjkills
-
+//get all sub for specific skills
 router.get("/skill/:skillId", authMiddleware, async (req, res) => {
   try {
     const submissions = Submission.find({ skill: req.params.skillId })
@@ -100,6 +99,67 @@ router.get("/skill/:skillId", authMiddleware, async (req, res) => {
       .sort({ submittedAt: -1 });
 
     res.json(submissions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+//Stats
+router.get("/user/:userId/stats", authMiddleware, async (req, res) => {
+  try {
+    const submissions = await Submission.find({ user: req.params.userId });
+
+    const totalSubmissions = submissions.length;
+    const passedSubmissions = submissions.filter(
+      (sub) => sub.result === "Passed"
+    ).length;
+    const failedSubmission = submissions.filter(
+      (sub) => sub.result === "Failed"
+    ).length;
+
+    res.json({
+      totalSubmissions,
+      passedSubmissions,
+      failedSubmission,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+//all submission for specific challange
+router.get("/challange/:challangeId", authMiddleware, async (req, res) => {
+  try {
+    const submissions = await Submission.find({
+      challange: req.params.challangeId,
+    })
+      .populate("user", "name email")
+      .sort({ submittedAt: -1 });
+  } catch (error) {}
+});
+
+// Manual Evaluation by Admin
+router.patch("/:id/manual-evaluate", authMiddleware, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res
+        .status(403)
+        .json({ message: "Only admins can manually evaluate submissions" });
+    }
+
+    const { result } = req.body;
+    const submission = await Submission.findById(req.params.id);
+    if (!submission) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+
+    submission.result = result;
+    await submission.save();
+
+    res.json({
+      message: `Submission manually evaluated: ${result}`,
+      submission,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
