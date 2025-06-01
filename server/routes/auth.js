@@ -21,7 +21,12 @@ router.post("/signup", async (req, res) => {
     const hashPass = await bcrypt.hash(password, 10);
 
     //New User Creation
-    const user = await User.create({ name, email, password: hashPass, isAdmin});
+    const user = await User.create({
+      name,
+      email,
+      password: hashPass,
+      isAdmin,
+    });
 
     //token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -34,7 +39,7 @@ router.post("/signup", async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        isAdmin : isAdmin || false
+        isAdmin: isAdmin || false,
       },
     });
   } catch (error) {
@@ -52,13 +57,13 @@ router.post("/login", async (req, res) => {
     //Checking User
     const user = await User.findOne({ email });
     if (!user) {
-      res.status(400).json({
+      return res.status(400).json({
         message: "User not found",
       });
     }
 
     //Pass check
-    const passMatch =await bcrypt.compare(password, user.password);
+    const passMatch = await bcrypt.compare(password, user.password);
     if (!passMatch) {
       res.status(400).json({
         message: "Incorrect Password",

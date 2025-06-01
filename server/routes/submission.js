@@ -1,7 +1,7 @@
 const express = require("express");
 const authMiddleware = require("../middleware/auth");
 const Submission = require("../models/Submission");
-const router = require("./auth");
+const router = express.Router();
 const app = express();
 
 app.use(express.json());
@@ -30,11 +30,11 @@ router.get("/:id", authMiddleware, async (req, res) => {
       .populate("user", "name email")
       .populate("skill", "name");
     if (!submission) {
-      return res.json({ messaeg: "Submission not found" });
+      return res.status(404).json({ message: "Submission not found" });
     }
     res.json(submission);
   } catch (error) {
-    res.status(500).json({ messaeg: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -65,7 +65,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     await submission.deleteOne();
     res.json({ message: "Submission deleted" });
   } catch (error) {
-    res.status(500).json({ messaeg: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -108,8 +108,9 @@ router.get("/skill/:skillId", authMiddleware, async (req, res) => {
 //Stats
 router.get("/user/:userId/stats", authMiddleware, async (req, res) => {
   try {
-    const submissions = await Submission.find({ user: req.params.userId });
-
+    const submissions = await Submission.find({
+      user: req.params.userId,
+    }).populate("skill", "name");
     const totalSubmissions = submissions.length;
     const passedSubmissions = submissions.filter(
       (sub) => sub.result === "Passed"
@@ -137,8 +138,9 @@ router.get("/challenge/:challengeId", authMiddleware, async (req, res) => {
       .populate("user", "name email")
       .sort({ submittedAt: -1 });
     res.json(submissions);
-  } catch (error) {  res.status(500).json({ message: error.message });
-}
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // Manual Evaluation by Admin

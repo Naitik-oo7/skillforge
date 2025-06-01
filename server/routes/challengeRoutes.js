@@ -35,7 +35,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
       .populate("skill")
       .populate("createdBy", "name email");
     if (!challenge) {
-      return res.json({ messaeg: "Challenge not found" });
+      return res.json({ message: "Challenge not found" });
     }
     res.json(challenge);
   } catch (error) {
@@ -43,22 +43,11 @@ router.get("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-router.put("/:id", authMiddleware, async (req, res) => {
-  try {
-    const updatedChallenge = await Challenge.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    res.json(updatedChallenge);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+
 
 router.patch("/:id", authMiddleware, async (req, res) => {
   try {
-    const challenge = Challenge.findById(req.params.id);
+    const challenge = await Challenge.findById(req.params.id);
     if (!challenge) {
       return res.status(404).json({ message: "Challenge not found" });
     }
@@ -76,7 +65,7 @@ router.patch("/:id", authMiddleware, async (req, res) => {
 
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    const challenge = Challenge.findById(req.params.id);
+    const challenge = await Challenge.findById(req.params.id);
     if (!challenge) {
       return res.json({ message: "Challenge not Found" });
     }
