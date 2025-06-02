@@ -22,23 +22,22 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        {
+          email,
+          password,
+        }
+      );
 
-      // Assuming response.data.token contains JWT token
       const { token } = response.data;
 
-      // Store token in localStorage
       localStorage.setItem("token", token);
 
-      // Redirect to dashboard after successful login
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
 
-      // Show user-friendly error
       setError(
         err.response?.data?.message ||
           "Login failed. Please check your credentials."
