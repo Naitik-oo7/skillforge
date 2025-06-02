@@ -1,51 +1,110 @@
-import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import {jwtDecode} from "jwt-decode"; // fix import, it’s default export
+
+import axios from "axios";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
-  let username = "User";
-  if (token) {
-    const decoded = jwtDecode(token);
-    username = decoded.name;
-  }
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
+  const [user, setUser] = useState({});
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+  const [leaderboardError, setLeaderboardError] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUser(decoded);
+      } catch (error) {
+        console.error("Token decode error", error);
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } else {
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Not authenticated");
+
+        const res = await axios.get(
+          "http://localhost:5000/api/stats/leaderboard",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setLeaderboard(res.data);
+      } catch (err) {
+        setLeaderboardError(
+          err.response?.data?.message || err.message || "Failed to load leaderboard"
+        );
+      } finally {
+        setLoadingLeaderboard(false);
+      }
+    }
+
+    fetchLeaderboard();
+  }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <h1 className="text-4xl font-bold mb-4">Welcome, {username}</h1>
+    <div className="max-w-5xl mx-auto mt-10">
+      <h1 className="text-3xl font-bold mb-6">Welcome, {user.name}!</h1>
 
-      <button
-        onClick={() => navigate("/submit-challenge")}
-        className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition mb-6"
-      >
-        Submit New Challenge
-      </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        <Link
+          to={`/submissions/user/${user.id}`}
+          className="bg-white p-6 rounded shadow hover:shadow-lg transition block"
+        >
+          Your Code Submissions
+        </Link>
+        <Link
+          to="/challenges"
+          className="bg-white p-6 rounded shadow hover:shadow-lg transition block"
+        >
+          Available Challenges
+        </Link>
+        <Link
+          to={`/stats/${user.id}`}
+          className="bg-white p-6 rounded shadow hover:shadow-lg transition block"
+        >
+          Stats
+        </Link>
+        {user.isAdmin && (
+          <Link
+            to="/admin"
+            className="bg-white p-6 rounded shadow hover:shadow-lg transition block"
+          >
+            Admin Panel
+          </Link>
+        )}
+      </div>
 
-      <h2 className="text-2xl font-semibold mb-2">Your Completed Challenges</h2>
+      <div className="bg-white p-6 rounded shadow max-w-md mx-auto">
+        <h2 className="text-2xl font-bold mb-4 text-center">Leaderboard - Top 5 Users</h2>
 
-      {/* Replace this with fetched data later */}
-      <ul className="w-96">
-        <li className="p-4 bg-white rounded shadow mb-2">
-          Challenge 1: Array Reverse
-        </li>
-        <li className="p-4 bg-white rounded shadow mb-2">
-          Challenge 2: FizzBuzz
-        </li>
-        <li className="p-4 bg-white rounded shadow mb-2">
-          Challenge 3: Binary Search
-        </li>
-      </ul>
-
-      <button
-        onClick={handleLogout}
-        className="mt-10 px-5 py-2 bg-red-500 text-white rounded shadow hover:bg-red-600 transition"
-      >
-        Logout
-      </button>
+        {loadingLeaderboard ? (
+          <p>Loading leaderboard...</p>
+        ) : leaderboardError ? (
+          <p className="text-red-500">{leaderboardError}</p>
+        ) : leaderboard.length === 0 ? (
+          <p>No leaderboard data available.</p>
+        ) : (
+          <ol className="list-decimal list-inside space-y-2 text-lg">
+            {leaderboard.map(({ userId, name, passedCount }) => (
+              <li key={userId} className="flex justify-between">
+                <span>{name}</span>
+                <span className="font-semibold">{passedCount} passed</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
     </div>
   );
 };

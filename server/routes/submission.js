@@ -1,14 +1,22 @@
 const express = require("express");
 const authMiddleware = require("../middleware/auth");
 const Submission = require("../models/Submission");
+const OpenAI = require("openai");
+const evaluateSubmission = require("../utils/evaluateSubmission");
+
 const router = express.Router();
 const app = express();
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 app.use(express.json());
 //Post a submission
 router.post("/", authMiddleware, async (req, res) => {
   try {
     const { skill, code, challenge } = req.body;
+
     const newSubmission = new Submission({
       user: req.user.id,
       skill,
@@ -16,13 +24,22 @@ router.post("/", authMiddleware, async (req, res) => {
       code,
       result: "Pending",
     });
+
     await newSubmission.save();
-    res.status(201).json(newSubmission);
+
+    // ✅ Auto-evaluate right after saving
+    await evaluateSubmission(newSubmission);
+
+    // Fetch the latest updated submission (with result & explanation)
+    const evaluatedSubmission = await Submission.findById(newSubmission._id)
+      .populate("skill", "name")
+      .populate("challenge", "description");
+
+    res.status(201).json(evaluatedSubmission);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
 //Get /api/submissions/:id - Getting a single submission by id
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
@@ -69,25 +86,60 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// Simulate code evaluation
 router.post("/:id/evaluate", authMiddleware, async (req, res) => {
   try {
-    const submission = await Submission.findById(req.params.id);
+    const submission = await Submission.findById(req.params.id).populate(
+      "challenge"
+    );
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
     }
 
     if (submission.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: "not authorised" });
+      return res.status(403).json({ message: "Not authorised" });
     }
 
-    const code = submission.code;
-    const isPassed = code.trim().includes("console.log");
+    const prompt = `
+Challenge description:
+${submission.challenge.description || "No description provided."}
 
-    submission.result = isPassed ? "Passed" : "Failed";
+User submitted code:
+${submission.code || "No code provided."}
+
+Does this code correctly solve the challenge? Reply only with "Passed" or "Failed" and a short explanation.
+    `;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are an expert code evaluator." },
+        { role: "user", content: prompt },
+      ],
+      max_tokens: 100,
+      temperature: 0,
+    });
+
+    const aiResponse = completion.choices[0].message.content.trim();
+    console.log("AI Response:", aiResponse); // Debug output
+
+    // Robust result parsing
+    let result;
+    if (aiResponse.toLowerCase().includes("passed")) {
+      result = "Passed";
+    } else if (aiResponse.toLowerCase().includes("failed")) {
+      result = "Failed";
+    } else {
+      result = "Pending"; // fallback if ambiguous
+    }
+
+    submission.result = result;
+    submission.aiExplanation = aiResponse; // Save the explanation text
+
     await submission.save();
-    res.json({ message: `Submission evaluated : ${submission.result}` });
+
+    res.json({ message: `Submission evaluated: ${result}`, aiResponse });
   } catch (error) {
+    console.error("Error during AI evaluation:", error);
     res.status(500).json({ message: error.message });
   }
 });

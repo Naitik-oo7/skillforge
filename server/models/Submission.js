@@ -2,11 +2,14 @@ const mongoose = require("mongoose");
 const { string } = require("zod");
 
 const submissionSchema = new mongoose.Schema({
+  aiExplanation: {
+    type: String,
+    default: "",
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
-   
   },
   skill: {
     type: mongoose.Schema.Types.ObjectId,

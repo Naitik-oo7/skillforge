@@ -10,7 +10,7 @@ async function getUserStats(req, res) {
     }
 
     const stats = await Submission.aggregate([
-      { $match: { user: mongoose.Types.ObjectId(userId) } },
+      { $match: { user:new mongoose.Types.ObjectId(userId) } },
 
       {
         $group: {

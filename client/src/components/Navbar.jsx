@@ -5,15 +5,15 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); // Clear token
-    navigate("/login"); // Redirect to login page
+    localStorage.removeItem("token"); 
+    navigate("/login"); 
   };
 
   const token = localStorage.getItem("token");
 
   return (
     <nav className="bg-blue-600 text-white p-4 flex justify-between items-center">
-      <Link to="/" className="font-bold text-xl">
+      <Link to="/dashboard  " className="font-bold text-xl">
         SkillForge
       </Link>
 
